@@ -201,6 +201,7 @@ public class SqlParserTest {
       "CURRENT_USER",                  "92", "99", "2003", "2011", "2014", "c",
       "CURSOR",                        "92", "99", "2003", "2011", "2014", "c",
       "CYCLE",                               "99", "2003", "2011", "2014", "c",
+      "DANY",                                                              "c",
       "DATA",                                "99",
       "DATE",                          "92", "99", "2003", "2011", "2014", "c",
       "DAY",                           "92", "99", "2003", "2011", "2014", "c",
@@ -746,6 +747,12 @@ public class SqlParserTest {
   @Test void testStarAsFails() {
     sql("select * as x from emp")
         .ok("SELECT * AS `X`\n"
+            + "FROM `EMP`");
+  }
+
+  @Test void testAny() {
+    sql("select DANY{empid, name} from emp")
+        .ok("SELECT DANY { `EMPID`, `NAME` }\n"
             + "FROM `EMP`");
   }
 

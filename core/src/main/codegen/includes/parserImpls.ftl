@@ -14,21 +14,3 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 -->
-
-<#--
-  Add implementations of additional parser statements, literals or
-  data types.
-
-  Example of SqlShowTables() implementation:
-  SqlNode SqlShowTables()
-  {
-    ...local variables...
-  }
-  {
-    <SHOW> <TABLES>
-    ...
-    {
-      return SqlShowTables(...)
-    }
-  }
--->

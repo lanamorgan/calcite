@@ -38,17 +38,30 @@ data: {
   # Default declarations are in default_config.fmpp; if you do not include a
   # declaration ('imports' or 'nonReservedKeywords', for example) in this file,
   # FMPP will use the declaration from default_config.fmpp.
+
+
   parser: {
     # Generated parser implementation package and class name.
     package: "org.apache.calcite.sql.parser.impl",
     class: "SqlParserImpl",
+
+    imports:[
+    ]
+
+    keywords: [
+    ]
+
+    nonReservedKeywordsToAdd: [
+    ]
+
+    statementParserMethods: [
+    ]
 
     # List of files in @includes directory that have parser method
     # implementations for parsing custom SQL statements, literals or types
     # given as part of "statementParserMethods", "literalParserMethods" or
     # "dataTypeParserMethods".
     implementationFiles: [
-      "parserImpls.ftl"
     ]
   }
 }

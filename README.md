@@ -37,3 +37,6 @@ Elasticsearch, MongoDB, Kafka, and others, with minimal
 configuration.
 
 For more details, see the [home page](http://calcite.apache.org).
+
+This repository is a version of Calcite frozen at version 1.26.0 that implements a set of differencing operators used in
+physical visualization design.

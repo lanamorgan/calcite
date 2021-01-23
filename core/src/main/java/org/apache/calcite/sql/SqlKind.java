@@ -96,6 +96,13 @@ public enum SqlKind {
   SELECT,
 
   /**
+   *  Diffnodes
+   */
+  ANY,
+
+  PARAM,
+
+  /**
    * Sql Hint statement.
    */
   HINT,
