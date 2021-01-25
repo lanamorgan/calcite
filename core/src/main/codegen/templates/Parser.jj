@@ -85,6 +85,7 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlNumericLiteral;
 import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.SqlParam;
 import org.apache.calcite.sql.SqlOrderBy;
 import org.apache.calcite.sql.SqlPivot;
 import org.apache.calcite.sql.SqlPostfixOperator;
@@ -1804,23 +1805,6 @@ SqlInsert WhenNotMatchedClause(SqlNode table) :
 }
 
 /**
- * Parses the select list of a SELECT statement.
- */
-List<SqlNode> SelectList() :
-{
-    final List<SqlNode> list = new ArrayList<SqlNode>();
-    SqlNode item;
-}
-{
-
-    <DANY> item = SqlDAny() { list.add(item) }
-
-    {
-        return list;
-    }
-}
-
-/**
  * Parses one item in a select list.
  */
 SqlNode SelectItem() :
@@ -2478,6 +2462,9 @@ SqlNode WhereOpt() :
     SqlNode condition;
 }
 {
+    LOOKAHEAD(2)
+    <WHERE> <DANY> condition = SqlDAny(SqlKind.FILTER) { return condition; }
+    |
     <WHERE> condition = Expression(ExprContext.ACCEPT_SUB_QUERY)
     {
         return condition;
@@ -4227,6 +4214,8 @@ SqlNode NonIntervalLiteral() :
 }
 {
     (
+        e = ParamLiteral()
+    |
         e = NumericLiteral()
     |
         e = StringLiteral()
@@ -4478,6 +4467,23 @@ SqlNode StringLiteral() :
     }
 }
 
+/**
+ * Parses a parameterized literal.
+ */
+
+SqlLiteral ParamLiteral() :
+{
+    final Span s;
+    final SqlTypeNameSpec type;
+}
+{
+    <PARAM>  { s = span(); }
+    <COLON>
+    type = SqlTypeName(s)
+    {
+        return new SqlParam(s.end(this), type.getTypeName());
+    }
+}
 
 /**
  * Parses a date/time literal.
@@ -6089,6 +6095,7 @@ import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlNumericLiteral;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlOrderBy;
+import org.apache.calcite.sql.SqlParam;
 import org.apache.calcite.sql.SqlPivot;
 import org.apache.calcite.sql.SqlPostfixOperator;
 import org.apache.calcite.sql.SqlPrefixOperator;
@@ -7804,21 +7811,32 @@ SqlInsert WhenNotMatchedClause(SqlNode table) :
     }
 }
 
-SqlNode SqlDAny() :
+SqlNode SqlDAny(SqlKind clauseType) :
 {
     final Span s;
     List<SqlNode> children;
+    SqlNodeList sqlChildren = null;
 
 }
-    // DANY[expr1, expr2...]
 {
-    <LBRACE> { s = span(); }
+
+    <LBRACE>
     {
-        children = SelectList();
+        s = span();
+        switch (clauseType) {
+        case SELECT:
+            children = SelectList();
+            sqlChildren = SqlNodeList.of(Span.of(children).pos(), children);
+            break;
+        case FILTER:
+            sqlChildren = ExpressionCommaList(s, ExprContext.ACCEPT_SUB_QUERY);
+            break;
+        }
     }
     <RBRACE>
+
     {
-        return new SqlAny(s.end(this), SqlNodeList.of(Span.of(children).pos(), children));
+        return new SqlAny(s.end(this), sqlChildren, clauseType);
     }
 }
 
@@ -7834,7 +7852,7 @@ List<SqlNode> SelectList() :
 }
 {
     (
-        <DANY> item = SqlDAny() { list.add(item); }
+        <DANY> item = SqlDAny(SqlKind.SELECT) { list.add(item); }
     |
         item = SelectItem() {
             list.add(item);
@@ -7842,7 +7860,7 @@ List<SqlNode> SelectList() :
     )
     (
        LOOKAHEAD(2)
-       <COMMA> <DANY> item = SqlDAny() { list.add(item); }
+       <COMMA> <DANY> item = SqlDAny(SqlKind.SELECT) { list.add(item); }
        |
         <COMMA>  item = SelectItem() { list.add(item);}
     )*
@@ -8510,6 +8528,9 @@ SqlNode WhereOpt() :
     SqlNode condition;
 }
 {
+    LOOKAHEAD(2)
+    <WHERE> <DANY> condition = SqlDAny(SqlKind.FILTER) { return condition; }
+    |
     <WHERE> condition = Expression(ExprContext.ACCEPT_SUB_QUERY)
     {
         return condition;
@@ -8602,6 +8623,7 @@ SqlNodeList ExpressionCommaList(
         return new SqlNodeList(list, s.addAll(list).pos());
     }
 }
+
 
 /**
  * Parses a list of expressions separated by commas,
@@ -10259,6 +10281,8 @@ SqlNode NonIntervalLiteral() :
 }
 {
     (
+        e = ParamLiteral()
+    |
         e = NumericLiteral()
     |
         e = StringLiteral()
@@ -10510,6 +10534,23 @@ SqlNode StringLiteral() :
     }
 }
 
+/**
+ * Parses a parameterized literal.
+ */
+
+SqlLiteral ParamLiteral() :
+{
+    final Span s;
+    final SqlTypeNameSpec type;
+}
+{
+    <PARAM>  { s = span(); }
+    <COLON>
+    type = SqlTypeName(s)
+    {
+        return new SqlParam(s.end(this), type.getTypeName());
+    }
+}
 
 /**
  * Parses a date/time literal.
@@ -13934,6 +13975,7 @@ SqlPostfixOperator PostfixRowOperator() :
 |   < YEARS: "YEARS" >
 |   < ZONE: "ZONE" >
 |   < DANY: "DANY" >
+|   < PARAM: "PARAM">
 <#-- additional parser keywords are included here -->
 <#list (parser.keywords!default.parser.keywords) as keyword>
 |   < ${keyword}: "${keyword}" >

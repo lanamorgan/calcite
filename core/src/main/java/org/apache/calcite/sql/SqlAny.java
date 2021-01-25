@@ -27,11 +27,13 @@ import java.util.Objects;
 public class SqlAny extends SqlCall {
 
   SqlNodeList children;
-
+  SqlKind clauseType;
   public SqlAny(SqlParserPos pos,
-      @Nullable SqlNodeList children) {
+      @Nullable SqlNodeList children,
+      SqlKind clauseType) {
     super(pos);
     this.children = children;
+    this.clauseType = clauseType;
   }
 
 

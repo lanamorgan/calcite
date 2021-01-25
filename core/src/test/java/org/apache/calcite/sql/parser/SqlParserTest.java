@@ -398,6 +398,7 @@ public class SqlParserTest {
       "OVERLAPS",                      "92", "99", "2003", "2011", "2014", "c",
       "OVERLAY",                                           "2011", "2014", "c",
       "PAD",                           "92", "99",
+      "PARAM",                                                             "c",
       "PARAMETER",                     "92", "99", "2003", "2011", "2014", "c",
       "PARTIAL",                       "92", "99",
       "PARTITION",                           "99", "2003", "2011", "2014", "c",
@@ -754,7 +755,46 @@ public class SqlParserTest {
     sql("select DANY{empid, name} from emp")
         .ok("SELECT DANY { `EMPID`, `NAME` }\n"
             + "FROM `EMP`");
+
+    sql("select empno, DANY{empid, name}, count(*) from emp")
+        .ok("SELECT `EMPNO`, DANY { `EMPID`, `NAME` }, COUNT(*)\n"
+            + "FROM `EMP`");
+
+    sql("select empno, DANY{empid, DANY{name}} from emp")
+        .ok("SELECT `EMPNO`, DANY { `EMPID`, DANY { `NAME` } }\n"
+            + "FROM `EMP`");
+
+    sql("select * from t where DANY { price > 5 , price = 2}")
+        .ok("SELECT *\n"
+            + "FROM `T`\n"
+            + "WHERE\n"
+            + "DANY\n" +
+            "{ (`PRICE` > 5), (`PRICE` = 2)\n"
+            + "}");
+
+
+
+
+
   }
+
+  @Test void testParam() {
+    sql("select * from t where price > PARAM:Int")
+        .ok("SELECT *\n"
+            + "FROM `T`\n"
+            + "WHERE (`PRICE` > PARAM: `INTEGER`)");
+
+    sql("select * from t where price between PARAM:Int and param:Int")
+        .ok("SELECT *\n"
+            + "FROM `T`\n"
+            + "WHERE (`PRICE` BETWEEN ASYMMETRIC PARAM: `INTEGER` AND PARAM: `INTEGER`)");
+
+    sql("select * from t where price between symmetric PARAM:Int and param:Int")
+        .ok("SELECT *\n"
+            + "FROM `T`\n"
+            + "WHERE (`PRICE` BETWEEN SYMMETRIC PARAM: `INTEGER` AND PARAM: `INTEGER`)");
+  }
+
 
   @Test void testFromStarFails() {
     sql("select * from sales^.^*")

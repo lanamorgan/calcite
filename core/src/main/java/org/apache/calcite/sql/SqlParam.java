@@ -19,16 +19,13 @@ package org.apache.calcite.sql;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-import java.util.HashSet;
-import java.util.Set;
-
 public class SqlParam extends SqlLiteral {
 
-  Set<SqlTypeName> allowableTypes;
+  SqlIdentifier sqlType;
 
-  public SqlParam(SqlParserPos pos, HashSet<SqlTypeName> allowableTypes) {
-    super(null, SqlTypeName.ANY, pos);
-    this.allowableTypes = allowableTypes;
+  public SqlParam(SqlParserPos pos, SqlIdentifier sqlType) {
+    super(null, SqlTypeName.PARAM, pos);
+    this.sqlType = sqlType;
   }
 
   @Override public SqlKind getKind() {
@@ -40,6 +37,7 @@ public class SqlParam extends SqlLiteral {
       SqlWriter writer,
       int leftPrec,
       int rightPrec) {
-    writer.sep("<param>");
+    writer.sep("param:");
+    sqlType.unparse(writer, leftPrec, rightPrec);
   }
 }

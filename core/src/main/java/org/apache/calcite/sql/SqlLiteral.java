@@ -196,6 +196,8 @@ public class SqlLiteral extends SqlNode {
       return (value == null) || (value instanceof Boolean);
     case NULL:
       return value == null;
+    case PARAM:
+      return value == null;
     case DECIMAL:
     case DOUBLE:
       return value instanceof BigDecimal;
