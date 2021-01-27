@@ -18,6 +18,7 @@ package org.apache.calcite.sql.fun;
 
 import org.apache.calcite.avatica.util.TimeUnit;
 import org.apache.calcite.sql.SqlAggFunction;
+import org.apache.calcite.sql.SqlAnyOperator;
 import org.apache.calcite.sql.SqlAsOperator;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlBinaryOperator;
@@ -194,6 +195,10 @@ public class SqlStdOperatorTable extends ReflectiveSqlOperatorTable {
   /** <code>FILTER</code> operator filters which rows are included in an
    *  aggregate function. */
   public static final SqlFilterOperator FILTER = new SqlFilterOperator();
+
+  /** <code>ANY</code> operator branches on possible SQL paths.  */
+  public static final SqlAnyOperator ANY = SqlAnyOperator.INSTANCE;
+
 
   /** <code>WITHIN_GROUP</code> operator performs aggregations on ordered data input. */
   public static final SqlWithinGroupOperator WITHIN_GROUP = new SqlWithinGroupOperator();

@@ -767,15 +767,7 @@ public class SqlParserTest {
     sql("select * from t where DANY { price > 5 , price = 2}")
         .ok("SELECT *\n"
             + "FROM `T`\n"
-            + "WHERE\n"
-            + "DANY\n" +
-            "{ (`PRICE` > 5), (`PRICE` = 2)\n"
-            + "}");
-
-
-
-
-
+            + "WHERE DANY { (`PRICE` > 5), (`PRICE` = 2) }");
   }
 
   @Test void testParam() {

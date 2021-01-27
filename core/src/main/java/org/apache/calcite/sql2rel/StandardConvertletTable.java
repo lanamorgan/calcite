@@ -331,6 +331,7 @@ public class StandardConvertletTable extends ReflectiveConvertletTable {
     return rexBuilder.makeCall(type, SqlStdOperatorTable.CASE, exprs);
   }
 
+
   /** Converts a call to the IF function.
    *
    * <p>{@code IF(b, x, y)} &rarr; {@code CASE WHEN b THEN x ELSE y END}. */

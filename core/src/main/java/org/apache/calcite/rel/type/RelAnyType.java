@@ -14,18 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.calcite.rel.type;
+import java.util.List;
 
-//
-///**
-// * Extension to {@link SqlParserTest} which ensures that every expression can
-// * un-parse successfully.
-// */
-//class SqlUnParserTest extends SqlParserTest {
-//  @Override protected Tester getTester() {
-//    return new UnparsingTesterImpl();
-//  }
-//
-//  @Override protected boolean isUnparserTest() {
-//    return true;
-//  }
-//}
+public class RelAnyType extends RelDataTypeImpl {
+  @SuppressWarnings("method.invocation.invalid")
+  public RelAnyType(List<RelDataTypeField> fieldList) {
+    super(fieldList);
+  }
+
+  public RelAnyType(List<RelDataTypeField> fieldList, RelDataType childType) {
+    super(fieldList);
+  }
+  //~ Methods ----------------------------------------------------------------
+
+  @Override public boolean isStruct() {
+    return false;
+  }
+
+  @Override protected void generateTypeString(StringBuilder sb, boolean withDetail) {
+    sb.append("AnyType()");
+  }
+}

@@ -68,9 +68,11 @@ import org.apache.calcite.rel.metadata.RelColumnMapping;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.stream.Delta;
 import org.apache.calcite.rel.stream.LogicalDelta;
+import org.apache.calcite.rel.type.RelAnyType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rex.RexAny;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCallBinding;
@@ -97,6 +99,7 @@ import org.apache.calcite.schema.Wrapper;
 import org.apache.calcite.sql.JoinConditionType;
 import org.apache.calcite.sql.JoinType;
 import org.apache.calcite.sql.SqlAggFunction;
+import org.apache.calcite.sql.SqlAny;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -1981,6 +1984,17 @@ public class SqlToRelConverter {
   protected @Nullable RexNode convertExtendedExpression(
       SqlNode node,
       Blackboard bb) {
+    if (node instanceof SqlAny){
+      SqlAny anyRex = (SqlAny) node;
+      SqlNodeList children = anyRex.getChildren();
+      List<RexNode> rexChildren = new ArrayList<RexNode>();
+      for(SqlNode child : children) {
+        RexNode rexChild = bb.convertExpression(child);
+        rexChildren.add(rexChild);
+      }
+      RelDataType anyDataType = new RelAnyType(new ArrayList<RelDataTypeField>());
+      return new RexAny(anyDataType, rexChildren, anyRex.getKind());
+    }
     return null;
   }
 
@@ -4963,6 +4977,8 @@ public class SqlToRelConverter {
         final SqlNode query;
         final RelRoot root;
         switch (kind) {
+        case ANY:
+
         case IN:
         case NOT_IN:
         case SOME:

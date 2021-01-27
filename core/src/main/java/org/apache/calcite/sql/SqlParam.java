@@ -37,7 +37,7 @@ public class SqlParam extends SqlLiteral {
       SqlWriter writer,
       int leftPrec,
       int rightPrec) {
-    writer.sep("param:");
+    writer.literal("PARAM:");
     sqlType.unparse(writer, leftPrec, rightPrec);
   }
 }

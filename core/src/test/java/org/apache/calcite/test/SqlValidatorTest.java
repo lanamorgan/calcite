@@ -9499,6 +9499,7 @@ public class SqlValidatorTest extends SqlValidatorTestCase {
         + "OR left\n"
         + "\n"
         + "=> -\n"
+        + "ANY left\n"
         + "AS -\n"
         + "DESC post\n"
         + "FILTER left\n"

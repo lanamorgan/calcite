@@ -809,12 +809,12 @@ public class SqlLiteral extends SqlNode {
 
     case SYMBOL:
       return typeFactory.createSqlType(SqlTypeName.SYMBOL);
-
+    case PARAM:
+      return typeFactory.createSqlType(SqlTypeName.PARAM);
     case INTEGER: // handled in derived class
     case TIME: // handled in derived class
     case VARCHAR: // should never happen
     case VARBINARY: // should never happen
-
     default:
       throw Util.needToImplement(toString() + ", operand=" + value);
     }

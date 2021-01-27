@@ -38,11 +38,11 @@ public class SqlAnyOperator extends SqlOperator {
       int leftPrec,
       int rightPrec) {
     SqlAny any = (SqlAny) call;
-    writer.sep("DANY");
-    writer.sep("{");
+    writer.literal("DANY");
+    writer.literal("{");
     writer.list(SqlWriter.FrameTypeEnum.SIMPLE, SqlWriter.COMMA,
         any.children);
-    writer.sep("}");
+    writer.literal("}");
   }
 
 

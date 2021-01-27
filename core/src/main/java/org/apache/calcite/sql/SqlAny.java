@@ -17,6 +17,8 @@
 package org.apache.calcite.sql;
 
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.ImmutableNullableList;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -53,6 +55,18 @@ public class SqlAny extends SqlCall {
     default:
       throw new AssertionError(i);
     }
+  }
+
+  @Override public void validate(SqlValidator validator, SqlValidatorScope scope) {
+    validator.validateQuery(this, scope, validator.getUnknownType());
+  }
+
+  public SqlNodeList getChildren() { return children; }
+
+  public void setChildren(SqlNodeList children) { this.children = children; }
+
+  public void setChildren(List<SqlNode> children) {
+    this.children = new SqlNodeList(children, SqlParserPos.ZERO);
   }
 
   @Override public List<SqlNode> getOperandList() {

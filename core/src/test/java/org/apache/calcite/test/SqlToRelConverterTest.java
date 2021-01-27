@@ -96,6 +96,7 @@ class SqlToRelConverterTest extends SqlToRelTestBase {
     sql(sql).ok();
   }
 
+
   @Test void testDotLiteralAfterRow() {
     final String sql = "select row(1,2).\"EXPR$1\" from emp";
     sql(sql).ok();

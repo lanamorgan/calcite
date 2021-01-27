@@ -22,6 +22,7 @@ import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.type.DynamicRecordType;
+import org.apache.calcite.rel.type.RelAnyType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -42,6 +43,7 @@ import org.apache.calcite.sql.JoinType;
 import org.apache.calcite.sql.SqlAccessEnum;
 import org.apache.calcite.sql.SqlAccessType;
 import org.apache.calcite.sql.SqlAggFunction;
+import org.apache.calcite.sql.SqlAny;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
@@ -4325,6 +4327,20 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
     if (where == null) {
       return;
     }
+    if (where instanceof SqlAny ) {
+      SqlAny diffWhere = (SqlAny) where;
+      final SqlValidatorScope whereScope = getWhereScope(select);
+      List<SqlNode> validatedChildren = new ArrayList<SqlNode>();
+      SqlNodeList unvalidated = diffWhere.getChildren();
+      for (SqlNode child: unvalidated) {
+        SqlNode expandedChild = expand(child, whereScope);
+        validatedChildren.add(expandedChild);
+        validateWhereOrOn(whereScope, expandedChild, "WHERE");
+      }
+      diffWhere.setChildren(validatedChildren);
+      select.setWhere(diffWhere);
+      return;
+    }
     final SqlValidatorScope whereScope = getWhereScope(select);
     final SqlNode expandedWhere = expand(where, whereScope);
     select.setWhere(expandedWhere);
@@ -4399,7 +4415,13 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
             expandedSelectItems,
             aliases,
             fieldList);
-      } else {
+      }
+      else if (selectItem instanceof SqlAny) {
+        SqlAny item = (SqlAny) selectItem;
+        RelDataType childType = validateSelectList(item.getChildren(), select, targetRowType);
+        return new RelAnyType(new ArrayList<RelDataTypeField>(), childType);
+      }
+      else {
         // Use the field list size to record the field index
         // because the select item may be a STAR(*), which could have been expanded.
         final int fieldIdx = fieldList.size();
