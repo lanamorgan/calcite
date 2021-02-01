@@ -7820,13 +7820,13 @@ SqlNode SqlDAny(SqlKind clauseType) :
 }
 {
 
+
     <LBRACE>
     {
         s = span();
         switch (clauseType) {
         case SELECT:
-            children = SelectList();
-            sqlChildren = SqlNodeList.of(Span.of(children).pos(), children);
+            children = SelectList(); { sqlChildren = SqlNodeList.of(Span.of(children).pos(), children);}
             break;
         case FILTER:
             sqlChildren = ExpressionCommaList(s, ExprContext.ACCEPT_SUB_QUERY);
@@ -7834,7 +7834,6 @@ SqlNode SqlDAny(SqlKind clauseType) :
         }
     }
     <RBRACE>
-
     {
         return new SqlAny(s.end(this), sqlChildren, clauseType);
     }
@@ -7858,12 +7857,12 @@ List<SqlNode> SelectList() :
             list.add(item);
         }
     )
+    ( <COMMA>
     (
-       LOOKAHEAD(2)
-       <COMMA> <DANY> item = SqlDAny(SqlKind.SELECT) { list.add(item); }
-       |
-        <COMMA>  item = SelectItem() { list.add(item);}
-    )*
+       <DANY>item = SqlDAny(SqlKind.SELECT) { list.add(item); }
+    |
+       item = SelectItem() { list.add(item);}
+    ))*
     {
         return list;
     }

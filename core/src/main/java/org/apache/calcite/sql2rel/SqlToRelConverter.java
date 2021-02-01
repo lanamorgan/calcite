@@ -1984,16 +1984,22 @@ public class SqlToRelConverter {
   protected @Nullable RexNode convertExtendedExpression(
       SqlNode node,
       Blackboard bb) {
-    if (node instanceof SqlAny){
-      SqlAny anyRex = (SqlAny) node;
-      SqlNodeList children = anyRex.getChildren();
-      List<RexNode> rexChildren = new ArrayList<RexNode>();
-      for(SqlNode child : children) {
-        RexNode rexChild = bb.convertExpression(child);
-        rexChildren.add(rexChild);
-      }
-      RelDataType anyDataType = new RelAnyType(new ArrayList<RelDataTypeField>());
-      return new RexAny(anyDataType, rexChildren, anyRex.getKind());
+    if (node.getKind() == SqlKind.ANY){
+      throw new RuntimeException(node.getClass() + " found");
+      // somehow SqlAny gets turned into a basic call during validation
+//      SqlBasicCall anyRex = (SqlBasicCall) node;
+//      SqlNode children = anyRex.getOperands()[0];
+//      if (!(children instanceof SqlNodeList)){
+//        throw new RuntimeException("child is SqlNodeList");
+//      }
+//      SqlNodeList listChildren = (SqlNodeList) children;
+//      List<RexNode> rexChildren = new ArrayList<RexNode>();
+//      for(SqlNode child : listChildren) {
+//        RexNode rexChild = bb.convertExpression(child);
+//        rexChildren.add(rexChild);
+//      }
+//      RelDataType anyDataType = new RelAnyType(new ArrayList<RelDataTypeField>());
+//      return new RexAny(anyDataType, rexChildren, anyRex.getKind());
     }
     return null;
   }
@@ -4977,8 +4983,6 @@ public class SqlToRelConverter {
         final SqlNode query;
         final RelRoot root;
         switch (kind) {
-        case ANY:
-
         case IN:
         case NOT_IN:
         case SOME:

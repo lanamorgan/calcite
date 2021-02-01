@@ -61,7 +61,6 @@ public class SqlNodeToRexConverterImpl implements SqlNodeToRexConverter {
     if (convertlet != null) {
       return convertlet.convertCall(cx, call);
     }
-
     // No convertlet was suitable. (Unlikely, because the standard
     // convertlet table has a fall-back for all possible calls.)
     throw Util.needToImplement(call);

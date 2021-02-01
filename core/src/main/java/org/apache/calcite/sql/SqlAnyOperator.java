@@ -16,6 +16,12 @@
  */
 package org.apache.calcite.sql;
 
+import org.apache.calcite.rel.type.RelAnyType;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.sql.type.ReturnTypes;
+import org.apache.calcite.sql.validate.SqlValidator;
+import org.apache.calcite.sql.validate.SqlValidatorImpl;
+import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.type.ReturnTypes;
 
 public class SqlAnyOperator extends SqlOperator {
@@ -29,7 +35,7 @@ public class SqlAnyOperator extends SqlOperator {
   public static final SqlAnyOperator INSTANCE = new SqlAnyOperator();
 
   @Override public SqlSyntax getSyntax() {
-    return SqlSyntax.BINARY;
+    return SqlSyntax.PREFIX;
   }
 
   @Override public void unparse(
@@ -47,3 +53,4 @@ public class SqlAnyOperator extends SqlOperator {
 
 
 }
+

@@ -43,6 +43,7 @@ public class RexVisitorImpl<@Nullable R> implements RexVisitor<R> {
     return null;
   }
 
+
   @Override public R visitLocalRef(RexLocalRef localRef) {
     return null;
   }

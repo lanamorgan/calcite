@@ -206,6 +206,7 @@ val sqllineClasspath by configurations.creating {
 }
 
 dependencies {
+
     sqllineClasspath(platform(project(":bom")))
     sqllineClasspath("sqlline:sqlline")
     for (p in adaptersForSqlline) {
@@ -290,10 +291,10 @@ allprojects {
         dependencies {
             val testImplementation by configurations
             val testRuntimeOnly by configurations
-            testImplementation("org.junit.jupiter:junit-jupiter-api")
+            testImplementation("org.junit.jupiter:junit-jupiter-api:5.4.2")
+            testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.4.2")
             testImplementation("org.junit.jupiter:junit-jupiter-params")
             testImplementation("org.hamcrest:hamcrest")
-            testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
             if (project.props.bool("junit4", default = false)) {
                 // Allow projects to opt-out of junit dependency, so they can be JUnit5-only
                 testImplementation("junit:junit")

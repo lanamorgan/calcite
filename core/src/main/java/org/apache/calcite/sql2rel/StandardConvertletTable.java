@@ -23,6 +23,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rex.RexAny;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCallBinding;
@@ -32,6 +33,7 @@ import org.apache.calcite.rex.RexRangeRef;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.runtime.SqlFunctions;
 import org.apache.calcite.sql.SqlAggFunction;
+import org.apache.calcite.sql.SqlAny;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlCall;
@@ -292,6 +294,7 @@ public class StandardConvertletTable extends ReflectiveConvertletTable {
     }
   }
 
+
   /** Converts a call to the NVL function. */
   private static RexNode convertNvl(SqlRexContext cx, SqlCall call) {
     final RexBuilder rexBuilder = cx.getRexBuilder();
@@ -329,6 +332,18 @@ public class StandardConvertletTable extends ReflectiveConvertletTable {
       exprs.add(rexBuilder.makeNullLiteral(type));
     }
     return rexBuilder.makeCall(type, SqlStdOperatorTable.CASE, exprs);
+  }
+
+  private static RexNode convertAny(SqlRexContext cx, SqlCall call) {
+    final RelDataType type = cx.getValidator().getValidatedNodeType(call);
+    final SqlAny any = (SqlAny) call;
+    final SqlNodeList children = any.getChildren();
+    List<RexNode> rexChildren = new ArrayList<RexNode>();
+    for(SqlNode child: children) {
+      RexNode rexChild = cx.convertExpression(child);
+      rexChildren.add(rexChild);
+    }
+    return new RexAny(type, rexChildren, any.getKind());
   }
 
 

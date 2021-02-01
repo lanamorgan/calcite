@@ -15,16 +15,26 @@
  * limitations under the License.
  */
 package org.apache.calcite.rel.type;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class RelAnyType extends RelDataTypeImpl {
   @SuppressWarnings("method.invocation.invalid")
+//  public RelAnyType(List<RelDataTypeField> fieldList) {
+//    super(fieldList);
+//    computeDigest();
+//  }
+//
+//  public RelAnyType() {
+//    super(new ArrayList<RelDataTypeField>());
+//    computeDigest();
+//
+//  }
+
   public RelAnyType(List<RelDataTypeField> fieldList) {
     super(fieldList);
-  }
-
-  public RelAnyType(List<RelDataTypeField> fieldList, RelDataType childType) {
-    super(fieldList);
+    computeDigest();
   }
   //~ Methods ----------------------------------------------------------------
 

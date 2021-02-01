@@ -4327,20 +4327,6 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
     if (where == null) {
       return;
     }
-    if (where instanceof SqlAny ) {
-      SqlAny diffWhere = (SqlAny) where;
-      final SqlValidatorScope whereScope = getWhereScope(select);
-      List<SqlNode> validatedChildren = new ArrayList<SqlNode>();
-      SqlNodeList unvalidated = diffWhere.getChildren();
-      for (SqlNode child: unvalidated) {
-        SqlNode expandedChild = expand(child, whereScope);
-        validatedChildren.add(expandedChild);
-        validateWhereOrOn(whereScope, expandedChild, "WHERE");
-      }
-      diffWhere.setChildren(validatedChildren);
-      select.setWhere(diffWhere);
-      return;
-    }
     final SqlValidatorScope whereScope = getWhereScope(select);
     final SqlNode expandedWhere = expand(where, whereScope);
     select.setWhere(expandedWhere);
@@ -4415,13 +4401,7 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
             expandedSelectItems,
             aliases,
             fieldList);
-      }
-      else if (selectItem instanceof SqlAny) {
-        SqlAny item = (SqlAny) selectItem;
-        RelDataType childType = validateSelectList(item.getChildren(), select, targetRowType);
-        return new RelAnyType(new ArrayList<RelDataTypeField>(), childType);
-      }
-      else {
+      } else {
         // Use the field list size to record the field index
         // because the select item may be a STAR(*), which could have been expanded.
         final int fieldIdx = fieldList.size();

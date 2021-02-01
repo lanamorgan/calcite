@@ -137,7 +137,6 @@ public class SqlStdOperatorTable extends ReflectiveSqlOperatorTable {
    */
   public static final SqlMultisetSetOperator MULTISET_EXCEPT_DISTINCT =
       new SqlMultisetSetOperator("MULTISET EXCEPT DISTINCT", 14, false);
-
   /**
    * The {@code MULTISET EXCEPT [ALL]} operator.
    */

@@ -27,37 +27,34 @@ data: {
     # List of additional classes and packages to import.
     # Example: "org.apache.calcite.sql.*", "java.util.List".
     imports: [
-      "org.apache.calcite.sql.SqlCreate",
-      "org.apache.calcite.sql.parser.parserextensiontesting.SqlCreateTable",
-      "org.apache.calcite.sql.parser.parserextensiontesting.SqlUploadJarNode"
+
     ]
 
     # List of new keywords. Example: "DATABASES", "TABLES". If the keyword is
     # not a reserved keyword, add it to the 'nonReservedKeywords' section.
     keywords: [
-      "UPLOAD"
-      "JAR"
+
     ]
 
     # List of methods for parsing custom SQL statements.
     # Return type of method implementation should be 'SqlNode'.
     # Example: "SqlShowDatabases()", "SqlShowTables()".
     statementParserMethods: [
-      "SqlDescribeSpacePower()"
+
     ]
 
     # List of methods for parsing extensions to "ALTER <scope>" calls.
     # Each must accept arguments "(SqlParserPos pos, String scope)".
     # Example: "SqlAlterTable".
     alterStatementParserMethods: [
-      "SqlUploadJarNode"
+
     ]
 
     # List of methods for parsing extensions to "CREATE [OR REPLACE]" calls.
     # Each must accept arguments "(SqlParserPos pos, boolean replace)".
     # Example: "SqlCreateForeignSchema".
     createStatementParserMethods: [
-      "SqlCreateTable"
+
     ]
 
     # List of files in @includes directory that have parser method
@@ -65,7 +62,7 @@ data: {
     # given as part of "statementParserMethods", "literalParserMethods" or
     # "dataTypeParserMethods".
     implementationFiles: [
-      "parserImpls.ftl"
+
     ]
   }
 }

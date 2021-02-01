@@ -58,7 +58,10 @@ public class SqlAny extends SqlCall {
   }
 
   @Override public void validate(SqlValidator validator, SqlValidatorScope scope) {
-    validator.validateQuery(this, scope, validator.getUnknownType());
+  }
+
+  @Override public boolean isExpanded() {
+    return true;
   }
 
   public SqlNodeList getChildren() { return children; }
