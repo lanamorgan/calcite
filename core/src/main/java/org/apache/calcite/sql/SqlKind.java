@@ -100,6 +100,8 @@ public enum SqlKind {
    */
   ANY,
 
+  MULTI,
+
   PARAM,
 
   /**

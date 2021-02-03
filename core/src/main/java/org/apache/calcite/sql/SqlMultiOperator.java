@@ -24,15 +24,15 @@ import org.apache.calcite.sql.validate.SqlValidatorImpl;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.type.ReturnTypes;
 
-public class SqlAnyOperator extends SqlOperator {
+public class SqlMultiOperator extends SqlOperator {
 //~ Constructors -----------------------------------------------------------
 
-  private SqlAnyOperator() {
-    super("ANY", SqlKind.ANY, 20, true, ReturnTypes.SCOPE, null, null);
+  private SqlMultiOperator() {
+    super("MULTI", SqlKind.MULTI, 20, true, ReturnTypes.SCOPE, null, null);
 
   }
 
-  public static final SqlAnyOperator INSTANCE = new SqlAnyOperator();
+  public static final SqlMultiOperator INSTANCE = new SqlMultiOperator();
 
   @Override public SqlSyntax getSyntax() {
     return SqlSyntax.PREFIX;
@@ -43,14 +43,10 @@ public class SqlAnyOperator extends SqlOperator {
       SqlCall call,
       int leftPrec,
       int rightPrec) {
-    SqlAny any = (SqlAny) call;
-    writer.literal("ANY");
-    writer.literal("{");
-    writer.list(SqlWriter.FrameTypeEnum.SIMPLE, SqlWriter.COMMA,
-        any.children);
-    writer.literal("}");
+    SqlMulti multi = (SqlMulti) call;
+    writer.literal("MULTI");
+    writer.sep(multi.child.toString());
   }
 
 
 }
-

@@ -85,17 +85,52 @@ class SimpleSqlToRelTest {
 
   @Test
   void testSimpleAny() {
-    final String sql = "select DANY{'empid', DANY{'rand'}} from emp";
-    String expected = "SELECT DANY { 'empid', DANY { 'rand' } }\n"
+    final String sql = "select ANY{[empid, rand], [empid]} from emp";
+    String expected = "SELECT ANY { (`EMPID`, `RAND`), (`EMPID`) }\n"
         + "FROM `EMP`";
     sql(sql).ok(expected);
   }
 
   @Test
   void testNestedAny(){
-    final String sql = "select dany{'empid', dany{'deptno'}} from emp";
-    String expected = "SELECT DANY { 'empid', DANY { 'deptno' } }\n"
+    final String sql = "select any{[empid, any{[eptno, name]}]} from emp";
+    String expected = "SELECT ANY { (`EMPID`, ANY { (`EPTNO`, `NAME`) }) }\n"
         + "FROM `EMP`";
+    sql(sql).ok(expected);
+  }
+
+  @Test
+  void testSimpleMulti() {
+    final String sql = "select MULTI ANY{[empid, rand]} from emp";
+    String expected = "SELECT MULTI ANY { (`EMPID`, `RAND`) }\n"
+        + "FROM `EMP`";
+    sql(sql).ok(expected);
+  }
+
+  @Test
+  void testSimpleAnyFilter() {
+    final String sql = "select a, b, c from t where ANY {a = 0, b= 0, c=0}";
+    String expected = "SELECT `A`, `B`, `C`\n" +
+        "FROM `T`\n" +
+        "WHERE ANY { (`A` = 0), (`B` = 0), (`C` = 0) }";
+    sql(sql).ok(expected);
+  }
+
+  @Test
+  void testSimpleParam() {
+    final String sql = "select a, b, c from t where a = param:int";
+    String expected = "SELECT `A`, `B`, `C`\n" +
+        "FROM `T`\n" +
+        "WHERE (`A` = PARAM: `INTEGER`)";
+    sql(sql).ok(expected);
+  }
+
+  @Test
+  void testParamInAny() {
+    final String sql = "select a, b, c from t where ANY {a = param:int, b= param:int}";
+    String expected = "SELECT `A`, `B`, `C`\n" +
+        "FROM `T`\n" +
+        "WHERE ANY { (`A` = PARAM: `INTEGER`), (`B` = PARAM: `INTEGER`) }";
     sql(sql).ok(expected);
   }
 
@@ -104,7 +139,7 @@ class SimpleSqlToRelTest {
     final RelDataTypeFactory typeFactory =
         new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
     Map<String, RelDataType> schema = new HashMap<String, RelDataType>();
-    schema.put("ename", typeFactory.createSqlType(SqlTypeName.VARCHAR));
+    schema.put("name", typeFactory.createSqlType(SqlTypeName.VARCHAR));
     schema.put("eptno", typeFactory.createSqlType(SqlTypeName.INTEGER));
     schema.put("fleet", typeFactory.createSqlType(SqlTypeName.INTEGER));
     SimpleTable personTable = new SimpleTable("person", schema);
@@ -117,7 +152,7 @@ class SimpleSqlToRelTest {
         new SimpleSqlToRel(rexBuilder, planner, catalog);
     // TODO: weird bug where dany{<field_that_starts_with_d>} doesn't parse
     // but dany{<field_not_start_with_d, d_field>} does
-    final String sqlStr = "select dany{ename, dany{eptno}}, fleet from person";
+    final String sqlStr = "select any{[name, any{[eptno]}]}, fleet from person";
     final Sql sql = sql(sqlStr);
     final SqlNode parseTree = sql.parseTree();
     RelNode output = converter.convertQuery(parseTree);

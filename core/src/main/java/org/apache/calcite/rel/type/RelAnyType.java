@@ -21,19 +21,11 @@ import java.util.List;
 
 public class RelAnyType extends RelDataTypeImpl {
   @SuppressWarnings("method.invocation.invalid")
-//  public RelAnyType(List<RelDataTypeField> fieldList) {
-//    super(fieldList);
-//    computeDigest();
-//  }
-//
-//  public RelAnyType() {
-//    super(new ArrayList<RelDataTypeField>());
-//    computeDigest();
-//
-//  }
+  public List<RelDataType> childTypes;
 
-  public RelAnyType(List<RelDataTypeField> fieldList) {
+  public RelAnyType(List<RelDataTypeField> fieldList, List<RelDataType> childTypes) {
     super(fieldList);
+    this.childTypes = childTypes;
     computeDigest();
   }
   //~ Methods ----------------------------------------------------------------

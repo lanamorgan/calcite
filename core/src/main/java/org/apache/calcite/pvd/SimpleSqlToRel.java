@@ -20,6 +20,7 @@ import org.apache.calcite.rel.type.StructKind;
 import org.apache.calcite.rex.RexAny;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexNodeList;
 import org.apache.calcite.rex.RexSimpleField;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.util.Pair;
@@ -85,10 +86,22 @@ public class SimpleSqlToRel{
       SqlNodeList children = any.getChildren();
       List <RexNode> innerExps = new ArrayList<RexNode>();
       List <RelDataTypeField> innerTypes = new ArrayList<RelDataTypeField>();
+      List <RelDataType> anyChildTypes = new ArrayList<RelDataType>();
+      int count = 0;
       for (SqlNode child: children){
-        convertItem(child, inputType, innerExps, innerTypes);
+        SqlNodeList childList = (SqlNodeList) child;
+        List <RexNode> childExps = new ArrayList<RexNode>();
+        List <RelDataTypeField> childTypes = new ArrayList<RelDataTypeField>();
+        for(SqlNode childItem: childList) {
+          convertItem(childItem, inputType, childExps, childTypes);
+        }
+        RelDataType childType =
+            new RelRecordType(StructKind.PEEK_FIELDS, childTypes, true);
+        innerExps.add(RexNodeList.of(childType, childExps));
+        innerTypes.add(new RelDataTypeFieldImpl("", count, childType));
+        count +=1;
       }
-      RelDataType outputType = new RelAnyType(innerTypes);
+      RelDataType outputType = new RelAnyType(innerTypes, anyChildTypes);
       projectList.add(new RexAny(outputType, innerExps, SqlKind.ANY));
       projectTypes.add(new RelDataTypeFieldImpl("ANY", 0, outputType));
       break;
