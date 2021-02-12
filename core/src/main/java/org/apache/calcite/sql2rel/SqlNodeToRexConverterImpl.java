@@ -50,7 +50,7 @@ public class SqlNodeToRexConverterImpl implements SqlNodeToRexConverter {
 
   //~ Constructors -----------------------------------------------------------
 
-  SqlNodeToRexConverterImpl(SqlRexConvertletTable convertletTable) {
+  public SqlNodeToRexConverterImpl(SqlRexConvertletTable convertletTable) {
     this.convertletTable = convertletTable;
   }
 

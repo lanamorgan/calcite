@@ -43,6 +43,7 @@ dependencies {
     api("org.apache.calcite.avatica:avatica-core")
     api("org.apiguardian:apiguardian-api")
 
+    implementation("com.googlecode.json-simple:json-simple:1.1.1")
     implementation("com.esri.geometry:esri-geometry-api")
     implementation("com.fasterxml.jackson.core:jackson-core")
     implementation("com.fasterxml.jackson.core:jackson-databind")

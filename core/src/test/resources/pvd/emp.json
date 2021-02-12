@@ -1,0 +1,9 @@
+{
+  "tableName": "emp",
+  "schema": {
+      "name": "String",
+      "empid": "Integer",
+      "eptno": "Integer",
+      "role": "String"
+  }
+}

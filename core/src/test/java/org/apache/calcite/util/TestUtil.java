@@ -16,11 +16,16 @@
  */
 package org.apache.calcite.util;
 
+import org.apache.calcite.pvd.SimpleTable;
+
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 
 import org.junit.jupiter.api.Assertions;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
@@ -28,6 +33,9 @@ import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Map;
+import java.util.HashMap;
+
 
 /**
  * Static utilities for JUnit tests.
@@ -66,6 +74,17 @@ public abstract class TestUtil {
   }
 
   //~ Methods ----------------------------------------------------------------
+
+  public static Map<String, SimpleTable> createCatalog(){
+    File tables = new File("/Users/lramjit/work/calcite/core/src/test/resources/pvd");
+    File [] tableList = tables.listFiles();
+    Map<String, SimpleTable> catalog = new HashMap<String, SimpleTable>();
+    for (File table: tableList){
+      SimpleTable t = SimpleTable.createFromJson(table);
+      catalog.put(t.getName(), t);
+    }
+    return catalog;
+  }
 
   public static void assertEqualsVerbose(
       String expected,

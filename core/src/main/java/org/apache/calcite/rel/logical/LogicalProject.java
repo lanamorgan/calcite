@@ -29,6 +29,7 @@ import org.apache.calcite.rel.hint.RelHint;
 import org.apache.calcite.rel.metadata.RelMdCollation;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rex.RexAny;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
@@ -138,6 +139,16 @@ public final class LogicalProject extends Project {
   @Override public RelNode withHints(List<RelHint> hintList) {
     return new LogicalProject(getCluster(), traitSet, hintList,
         input, getProjects(), getRowType());
+  }
+
+  public boolean hasDiffNode(){
+    List<RexNode> projects = getProjects();
+    for(RexNode node: projects){
+      if (node instanceof RexAny){
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override public boolean deepEquals(@Nullable Object obj) {

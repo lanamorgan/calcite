@@ -21,23 +21,24 @@ import org.apache.calcite.sql.type.SqlTypeName;
 
 public class SqlParam extends SqlLiteral {
 
-  SqlIdentifier sqlType;
+  SqlTypeName sqlType;
 
   public SqlParam(SqlParserPos pos, SqlIdentifier sqlType) {
     super(null, SqlTypeName.PARAM, pos);
-    this.sqlType = sqlType;
+    this.sqlType = SqlTypeName.get(sqlType.toString());
   }
 
   @Override public SqlKind getKind() {
     return SqlKind.PARAM;
   }
 
-
+  public SqlTypeName getType(){
+    return sqlType;
+  }
   @Override public void unparse(
       SqlWriter writer,
       int leftPrec,
       int rightPrec) {
-    writer.literal("PARAM:");
-    sqlType.unparse(writer, leftPrec, rightPrec);
+    writer.literal("PARAM: " + sqlType.getName());
   }
 }

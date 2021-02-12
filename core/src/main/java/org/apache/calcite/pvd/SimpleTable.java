@@ -13,7 +13,9 @@ import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.hint.RelHint;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeFieldImpl;
+import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.rel.type.StructKind;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -26,10 +28,21 @@ import org.apache.calcite.schema.Statistic;
 import org.apache.calcite.schema.Statistics;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.type.SqlTypeFactoryImpl;
+import org.apache.calcite.sql.type.SqlTypeName;
 
 import org.apache.calcite.util.ImmutableBitSet;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
+
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+import org.json.simple.JSONObject;
+
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.File;
 
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -57,9 +70,41 @@ public class SimpleTable implements RelOptTable, Table{
     setRowType();
   }
 
-//  public static SimpleTable createSimpleTableFromJson(String filename){
-//
-//  }
+  public static SimpleTable createFromJson(File filename){
+    JSONParser jsonParser = new JSONParser();
+    final RelDataTypeFactory typeFactory =
+        new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
+    String tableName = "";
+    Map<String, RelDataType> tableSchema = new HashMap <String, RelDataType>();
+    try (FileReader reader = new FileReader(filename))
+    {
+      JSONObject table = (JSONObject) jsonParser.parse(reader);
+      JSONObject jsonSchema = (JSONObject) table.get("schema");
+      tableName = (String) table.get("tableName");
+      for (Object field: jsonSchema.keySet()){
+        String key = (String) field;
+        RelDataType sqlType = getSqlDataType(typeFactory, jsonSchema.get(key));
+        tableSchema.put(key, sqlType);
+      }
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    } catch (ParseException e) {
+      e.printStackTrace();
+    }
+    return new SimpleTable(tableName, tableSchema);
+  }
+
+  private static RelDataType getSqlDataType(RelDataTypeFactory factory, Object typ){
+    String typeName = (String) typ;
+    switch(typeName){
+    case "INTEGER":
+      return factory.createSqlType(SqlTypeName.INTEGER);
+    default:
+      return factory.createSqlType(SqlTypeName.VARCHAR);
+    }
+  }
 
 
   @Override public List<String> getQualifiedName(){
@@ -76,6 +121,8 @@ public class SimpleTable implements RelOptTable, Table{
   public RelDataType getRowType(){
     return rowType;
   }
+
+  public String getName() { return id; }
 
   public void setRowType(){
     List<RelDataTypeField> fieldList = new ArrayList<RelDataTypeField>();

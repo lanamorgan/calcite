@@ -1,24 +1,13 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to you under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.apache.calcite.test.pvd;
+
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.avatica.util.Quoting;
 import org.apache.calcite.plan.Contexts;
+import org.apache.calcite.plan.hep.HepPlanner;
+import org.apache.calcite.plan.hep.HepProgram;
+import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.RelOptPlanner;
+import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.pvd.SimpleTable;
 import org.apache.calcite.pvd.SimpleSqlToRel;
@@ -26,6 +15,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.rules.AnyExprMergeRule;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.sql.dialect.AnsiSqlDialect;
 import org.apache.calcite.sql.SqlDialect;
@@ -72,17 +62,16 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.Is.isA;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Unit test for {@link org.apache.calcite.sql2rel.SqlToRelConverter}.
- */
 class SimpleSqlToRelTest {
-  /**
-   * Sets the SQL statement for a test.
-   */
+
   public final Sql sql(String sql) {
     return new Sql(sql);
   }
 
+  /*
+   * Test the ability to parse a string of diffSQL into an (unvalidated)
+   * SQL parse tree.
+   */
   @Test
   void testSimpleAny() {
     final String sql = "select ANY{[empid, rand], [empid]} from emp";
@@ -93,9 +82,9 @@ class SimpleSqlToRelTest {
 
   @Test
   void testNestedAny(){
-    final String sql = "select any{[empid, any{[eptno, name]}]} from emp";
-    String expected = "SELECT ANY { (`EMPID`, ANY { (`EPTNO`, `NAME`) }) }\n"
-        + "FROM `EMP`";
+    final String sql = "select any{[empid], [any{[eptno, name]}]} from emp";
+    String expected = "SELECT ANY { (`EMPID`), (ANY { (`EPTNO`, `NAME`) }) }\n" +
+        "FROM `EMP`";
     sql(sql).ok(expected);
   }
 
@@ -104,6 +93,24 @@ class SimpleSqlToRelTest {
     final String sql = "select MULTI ANY{[empid, rand]} from emp";
     String expected = "SELECT MULTI ANY { (`EMPID`, `RAND`) }\n"
         + "FROM `EMP`";
+    sql(sql).ok(expected);
+  }
+
+  @Test
+  void testGroupMulti() {
+    final String sql = "select empid from emp group by MULTI ANY{[deptno]}";
+    String expected = "SELECT `EMPID`\n" +
+        "FROM `EMP`\n" +
+        "GROUP BY MULTI ANY { (`DEPTNO`) }";
+    sql(sql).ok(expected);
+  }
+
+  @Test
+  void testAnyMulti() {
+    final String sql = "select empid from emp group by ANY{[deptno], [empid]}";
+    String expected = "SELECT `EMPID`\n" +
+        "FROM `EMP`\n" +
+        "GROUP BY ANY { (`DEPTNO`), (`EMPID`) }";
     sql(sql).ok(expected);
   }
 
@@ -121,7 +128,7 @@ class SimpleSqlToRelTest {
     final String sql = "select a, b, c from t where a = param:int";
     String expected = "SELECT `A`, `B`, `C`\n" +
         "FROM `T`\n" +
-        "WHERE (`A` = PARAM: `INTEGER`)";
+        "WHERE (`A` = PARAM: INTEGER)";
     sql(sql).ok(expected);
   }
 
@@ -130,34 +137,56 @@ class SimpleSqlToRelTest {
     final String sql = "select a, b, c from t where ANY {a = param:int, b= param:int}";
     String expected = "SELECT `A`, `B`, `C`\n" +
         "FROM `T`\n" +
-        "WHERE ANY { (`A` = PARAM: `INTEGER`), (`B` = PARAM: `INTEGER`) }";
+        "WHERE ANY { (`A` = PARAM: INTEGER), (`B` = PARAM: INTEGER) }";
     sql(sql).ok(expected);
+  }
+  /*
+   * Test the ability to convert a parse tree with diff nodes into a relational
+   * algebra expression tree (a diff tree).
+   */
+  @Test
+  void testSimpleProjectAndScan(){
+    final String sqlStr = "select count(name) from emp";
+    final Sql sql = sql(sqlStr);
+    sql.convertsTo("LogicalProject(=[COUNT(name)])\n"
+        + "  LogicalTableScan(table=[[emp]])\n");
   }
 
   @Test
-  void testSimpleProjectAndScan(){
-    final RelDataTypeFactory typeFactory =
-        new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
-    Map<String, RelDataType> schema = new HashMap<String, RelDataType>();
-    schema.put("name", typeFactory.createSqlType(SqlTypeName.VARCHAR));
-    schema.put("eptno", typeFactory.createSqlType(SqlTypeName.INTEGER));
-    schema.put("fleet", typeFactory.createSqlType(SqlTypeName.INTEGER));
-    SimpleTable personTable = new SimpleTable("person", schema);
-    Map<String, SimpleTable> catalog = new HashMap<String, SimpleTable>();
-    catalog.put("person", personTable);
-    RelOptPlanner planner = new MockRelOptPlanner(Contexts.EMPTY_CONTEXT);
-    final RexBuilder rexBuilder = new RexBuilder(typeFactory);
-
-    SimpleSqlToRel converter =
-        new SimpleSqlToRel(rexBuilder, planner, catalog);
+  void testSimpleProjectAny(){
     // TODO: weird bug where dany{<field_that_starts_with_d>} doesn't parse
     // but dany{<field_not_start_with_d, d_field>} does
-    final String sqlStr = "select any{[name, any{[eptno]}]}, fleet from person";
+    final String sqlStr = "select any{[name, any{[eptno]}]} from emp";
     final Sql sql = sql(sqlStr);
-    final SqlNode parseTree = sql.parseTree();
-    RelNode output = converter.convertQuery(parseTree);
-    System.out.println(RelOptUtil.toString(output));
+    sql.convertsTo("LogicalProject(ANY=[ANY([name, ANY([eptno])])])\n"
+        + "  LogicalTableScan(table=[[emp]])\n");
   }
+
+  @Test
+  void testSimpleFilter(){
+    // TODO: weird bug where dany{<field_that_starts_with_d>} doesn't parse
+    // but dany{<field_not_start_with_d, d_field>} does
+    final String sqlStr = "select count(name) from emp where eptno > 0 and role = param: varchar";
+    final Sql sql = sql(sqlStr);
+    sql.convertsTo("LogicalProject(=[COUNT(name)])\n"
+        + "  LogicalFilter(condition=[AND(>(eptno, 0), =(role, 'param: VARCHAR'))])\n"
+        + "    LogicalTableScan(table=[[emp]])\n");
+  }
+
+  /*
+   * Test rules individually
+   */
+
+//  @Test
+//  void testProjectAnyMergeRule(){
+//    // TODO: weird bug where dany{<field_that_starts_with_d>} doesn't parse
+//    // but dany{<field_not_start_with_d, d_field>} does
+//    final String sqlStr = "select any{[name, any{[eptno]}]} from emp";
+//    final Sql sql = sql(sqlStr)
+//        .withRule(AnyExprMergeRule.ProjectAnyMergeRule.Config.DEFAULT.toRule());
+//    sql.checkPlanning("");
+//  }
+
 
   private static final ThreadLocal<boolean[]> LINUXIFY =
       ThreadLocal.withInitial(() -> new boolean[] {true});
@@ -174,10 +203,36 @@ class SimpleSqlToRelTest {
    */
   public class Sql {
     private final String sql;
-    private final SqlParser parser;
-
+    private SqlParser parser;
+    private SimpleSqlToRel converter;
+    private SqlNode parseTree = null;
+    private RelNode relRoot = null;
+    private RelOptPlanner planner;
     Sql(String sql) {
       this.sql = sql;
+      createParser();
+      createConverter();
+    }
+
+    Sql(String sql, RelOptPlanner planner){
+      this.sql = sql;
+      this.planner = planner;
+      createParser();
+      createConverter();
+    }
+
+    public Sql withRule(RelOptRule rule) {
+      final HepProgramBuilder builder = HepProgram.builder();
+      builder.addRuleInstance(rule);
+      return with(builder.build());
+    }
+
+    public Sql with(HepProgram program) {
+      final HepPlanner hepPlanner = new HepPlanner(program);
+      return new Sql(sql, hepPlanner);
+    }
+
+    private void createParser(){
       Quoting quoting = Quoting.DOUBLE_QUOTE;
       Casing unquotedCasing = Casing.TO_UPPER;
       Casing quotedCasing = Casing.UNCHANGED;
@@ -192,16 +247,63 @@ class SimpleSqlToRelTest {
       parser = SqlParser.create(sql, config);
     }
 
-    public SqlNode parseTree() {
+
+    private void createConverter(){
+      final RelDataTypeFactory typeFactory =
+          new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
+      Map<String, SimpleTable> catalog = TestUtil.createCatalog();
+      if(planner == null) {
+        planner = new MockRelOptPlanner(Contexts.EMPTY_CONTEXT);
+      }
+      final RexBuilder rexBuilder = new RexBuilder(typeFactory);
+      this.converter = new SimpleSqlToRel(rexBuilder, planner, catalog);
+    }
+
+    public void checkPlanning(String expected) {
+      parseTree();
+      convertToRel();
+
+//      List<RelMetadataProvider> list = new ArrayList<>();
+//      list.add(DefaultRelMetadataProvider.INSTANCE);
+//      planner.registerMetadataProviders(list);
+//      RelMetadataProvider plannerChain =
+//          ChainedRelMetadataProvider.of(list);
+//      final RelOptCluster cluster = relRoot.getCluster();
+//      cluster.setMetadataProvider(plannerChain);
+
+
+//      if (planner instanceof VolcanoPlanner) {
+//        relBefore = planner.changeTraits(relBefore,
+//            relBefore.getTraitSet().replace(EnumerableConvention.INSTANCE));
+//      }
+      planner.setRoot(relRoot);
+      RelNode r = planner.findBestExp();
+      final String planAfter = RelOptUtil.toString(r);
+      TestUtil.assertEqualsVerbose(expected, linux(planAfter));
+    }
+
+    private SqlNode parseTree() {
+      if (parseTree != null){
+        return parseTree;
+      }
       final SqlNode sqlNode;
       try {
         sqlNode = parser.parseQuery();
       } catch (SqlParseException e) {
         throw new RuntimeException("Error while parsing SQL: " + sql, e);
       }
+      parseTree = sqlNode;
       return sqlNode;
     }
 
+    private RelNode convertToRel() {
+      if (relRoot != null){
+        return relRoot;
+      }
+      parseTree();
+      relRoot = converter.convertQuery(parseTree);
+      return relRoot;
+    }
 
     public void checkParseTree(SqlNode sqlNode, String expected){
       final SqlDialect dialect = AnsiSqlDialect.DEFAULT;
@@ -215,8 +317,11 @@ class SimpleSqlToRelTest {
       checkParseTree(sqlNode, expected);
     }
 
-    public void convertToRel(String expected) {
-
+    public void convertsTo(String expected) {
+      parseTree();
+      convertToRel();
+      String relString = RelOptUtil.toString(relRoot);
+      TestUtil.assertEqualsVerbose(expected, linux(relString));
     }
 
     private String linux(String s) {

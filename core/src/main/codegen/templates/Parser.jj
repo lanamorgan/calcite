@@ -1282,7 +1282,7 @@ SqlSelect SqlSelect() :
     List<SqlNode> selectList;
     final SqlNode fromClause;
     final SqlNode where;
-    final SqlNodeList groupBy;
+    final SqlNode groupBy;
     final SqlNode having;
     final SqlNodeList windowDecls;
     final List<SqlNode> hints = new ArrayList<SqlNode>();
@@ -2485,13 +2485,21 @@ SqlNode WhereOpt() :
 SqlNodeList GroupByOpt() :
 {
     List<SqlNode> list = new ArrayList<SqlNode>();
+    SqlNode diff = null;
     final Span s;
 }
 {
     <GROUP> { s = span(); }
-    <BY> list = GroupingElementList() {
+    <BY>
+    (
+       <MULTI> diff = SqlMulti(SqlKind.GROUPING)
+       {
+        list.add(diff);
         return new SqlNodeList(list, s.addAll(list).pos());
-    }
+       }
+     |
+        list = GroupingElementList() { return new SqlNodeList(list, s.addAll(list).pos()); }
+    )
 |
     {
         return null;
@@ -2504,11 +2512,20 @@ List<SqlNode> GroupingElementList() :
     SqlNode e;
 }
 {
-    e = GroupingElement() { list.add(e); }
+
+    (
+         <ANY> e = SqlAnyGrouping(SqlKind.GROUPING) {list.add(e);}
+    |
+         e = GroupingElement() { list.add(e); }
+    )
     (
         LOOKAHEAD(2)
         <COMMA>
-        e = GroupingElement() { list.add(e); }
+       (
+           <ANY> e = SqlAnyGrouping(SqlKind.GROUPING) {list.add(e);}
+       |
+           e = GroupingElement() { list.add(e); }
+       )
     )*
     { return list; }
 }
@@ -7833,6 +7850,9 @@ SqlNode SqlMulti(SqlKind kind) :
         case FILTER:
             child = (SqlAny) SqlAnyFilter(kind);
             break;
+        case GROUPING:
+            child = (SqlAny) SqlAnyGrouping(kind);
+            break;
         }
     }
     {
@@ -7886,6 +7906,32 @@ SqlNode SqlAnyFilter(SqlKind clauseType) :
         }
 }
 
+SqlNode SqlAnyGrouping(SqlKind clauseType) :
+{
+    final Span s;
+    List<SqlNode> children = new ArrayList<SqlNode>();
+    List<SqlNode> item = new ArrayList<SqlNode>();
+    SqlNodeList sqlChildren = null;
+
+}
+{
+    <LBRACE> {s = span();}
+    (
+       <LBRACKET>
+       item = GroupingElementList() {children.add(SqlNodeList.of(Span.of(item).pos(), item));}
+       <RBRACKET>
+    )
+    (
+     <COMMA><LBRACKET>
+           item = GroupingElementList() {children.add(SqlNodeList.of(Span.of(item).pos(), item));}
+           <RBRACKET>
+    )*
+    <RBRACE>
+    {
+        sqlChildren = SqlNodeList.of(Span.of(children).pos(), children);
+        return new SqlAny(s.end(this), sqlChildren, clauseType);
+    }
+}
 
 /**
  * Parses the select list of a SELECT statement.
@@ -8597,13 +8643,21 @@ SqlNode WhereOpt() :
 SqlNodeList GroupByOpt() :
 {
     List<SqlNode> list = new ArrayList<SqlNode>();
+    SqlNode diff = null;
     final Span s;
 }
 {
     <GROUP> { s = span(); }
-    <BY> list = GroupingElementList() {
+    <BY>
+    (
+       <MULTI> diff = SqlMulti(SqlKind.GROUPING)
+       {
+        list.add(diff);
         return new SqlNodeList(list, s.addAll(list).pos());
-    }
+       }
+     |
+        list = GroupingElementList() { return new SqlNodeList(list, s.addAll(list).pos()); }
+    )
 |
     {
         return null;
@@ -8616,11 +8670,20 @@ List<SqlNode> GroupingElementList() :
     SqlNode e;
 }
 {
-    e = GroupingElement() { list.add(e); }
+
+    (
+         <ANY> e = SqlAnyGrouping(SqlKind.GROUPING) {list.add(e);}
+    |
+         e = GroupingElement() { list.add(e); }
+    )
     (
         LOOKAHEAD(2)
         <COMMA>
-        e = GroupingElement() { list.add(e); }
+       (
+           <ANY> e = SqlAnyGrouping(SqlKind.GROUPING) {list.add(e);}
+       |
+           e = GroupingElement() { list.add(e); }
+       )
     )*
     { return list; }
 }

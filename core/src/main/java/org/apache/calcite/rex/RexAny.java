@@ -42,6 +42,16 @@ public class RexAny extends RexCall {
     return type;
   }
 
+  public boolean hasDiffChild(){
+    List <RexNode> operands = getOperands();
+    for(RexNode child: operands){
+      if (child instanceof RexAny){
+        return true;
+      }
+    }
+    return false;
+  }
+
   @Override public <R, P> R accept(RexBiVisitor<R, P> visitor, P arg) {
     return visitor.visitCall(this, arg);
   }
